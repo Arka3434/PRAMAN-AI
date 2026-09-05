@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { PageHeader } from '../components/ui/page-header'
 import { PramanAssistantDrawer } from '../components/PramanAssistantDrawer'
 import { useAuth } from '../context/AuthContext'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -411,7 +412,10 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function InspectionWorkflowPage() {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
+  const canUpload = hasPermission
+    ? (hasPermission('inspections:edit') || hasPermission('inspection:edit'))
+    : (user?.role !== 'REVIEWER')
   const { inspectionId } = useParams()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [inspection, setInspection] = useState<InspectionRecord | null>(null)
@@ -708,8 +712,10 @@ export function InspectionWorkflowPage() {
   }, [uploadedImages])
 
   const resolveFindingImageUrl = (finding: FindingRecord): string | null => {
+    const token = getStoredToken()
+    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : ''
     if (finding.image_id && finding.inspection_id) {
-      return `${API_BASE}/api/v1/inspections/${finding.inspection_id}/images/${finding.image_id}/file`
+      return `${API_BASE}/api/v1/inspections/${finding.inspection_id}/images/${finding.image_id}/file${tokenParam}`
     }
     if (finding.storage_path) {
       return `${API_BASE}/${finding.storage_path}`
@@ -720,7 +726,7 @@ export function InspectionWorkflowPage() {
         return `${API_BASE}/${matching.storage_path}`
       }
       if (matching?.id && finding.inspection_id) {
-        return `${API_BASE}/api/v1/inspections/${finding.inspection_id}/images/${matching.id}/file`
+        return `${API_BASE}/api/v1/inspections/${finding.inspection_id}/images/${matching.id}/file${tokenParam}`
       }
     }
     if (uploadedImages.length > 0 && uploadedImages[0].storage_path) {
@@ -761,14 +767,19 @@ export function InspectionWorkflowPage() {
   }, [inspectionId, refreshSummary, fetchNotice])
 
   const uploadImages = async () => {
-    if (!inspectionId || selectedFiles.length === 0) {
+    const filesToUpload =
+      selectedFiles.length > 0
+        ? selectedFiles
+        : Array.from(fileInputRef.current?.files ?? [])
+
+    if (!inspectionId || filesToUpload.length === 0) {
       setErrorMessage('Please choose one or more images before uploading.')
       return
     }
 
     const formData = new FormData()
     formData.append('image_type', captureSide)
-    selectedFiles.forEach((file) => formData.append('files', file))
+    filesToUpload.forEach((file) => formData.append('files', file))
 
     try {
       setUploading(true)
@@ -779,8 +790,15 @@ export function InspectionWorkflowPage() {
       })
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(errorText || 'Image upload failed')
+        let errorMsg = 'Image upload failed'
+        try {
+          const errorJson = await response.json()
+          errorMsg = errorJson.detail || errorMsg
+        } catch {
+          const errorText = await response.text()
+          errorMsg = errorText || errorMsg
+        }
+        throw new Error(errorMsg)
       }
 
       const images = (await response.json()) as ImageRecord[]
@@ -1109,8 +1127,16 @@ export function InspectionWorkflowPage() {
               ) : null}
 
               <div className="flex flex-wrap gap-3">
-                <Button onClick={() => void uploadImages()} disabled={uploading || !hasSelectedFiles}>
-                  {uploading ? 'Uploading...' : 'Upload image'}
+                <Button
+                  onClick={() => void uploadImages()}
+                  disabled={uploading || !hasSelectedFiles || !canUpload}
+                  title={!canUpload ? 'Officer role has read-only access to evidence.' : undefined}
+                >
+                  {uploading
+                    ? 'Uploading...'
+                    : selectedFiles.length > 1
+                      ? `Upload ${selectedFiles.length} images`
+                      : 'Upload image'}
                 </Button>
               </div>
             </CardContent>
@@ -1136,13 +1162,20 @@ export function InspectionWorkflowPage() {
                           const qa = image.quality_assessment
                           const rot = image.rotation_metadata
                           const isRotating = rotatingImageId === image.id
+                          const token = getStoredToken()
+                          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
                           return (
                             <div key={image.id} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between" data-testid="image-card">
                               <div className="relative">
                                 <img
-                                  src={`${API_BASE}/api/v1/inspections/${inspectionId}/images/${image.id}/file?t=${rot?.updated_at ?? image.created_at}`}
+                                  src={`${API_BASE}/api/v1/inspections/${inspectionId}/images/${image.id}/file?t=${rot?.updated_at ?? image.created_at}${tokenParam}`}
                                   alt={image.file_name}
                                   className="h-44 w-full object-cover"
+                                  onError={(e) => {
+                                    if (image.storage_path && !e.currentTarget.src.includes(`/${image.storage_path}`)) {
+                                      e.currentTarget.src = `${API_BASE}/${image.storage_path}`
+                                    }
+                                  }}
                                 />
                                 <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                                   {qa && (

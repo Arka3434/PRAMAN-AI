@@ -62,6 +62,20 @@ function getDynamicTestAuth(): { token: string; storagePath: string } {
     cookies: [],
     origins: [
       {
+        origin: 'http://127.0.0.1:5173',
+        localStorage: [
+          { name: 'praman_token', value: token },
+          { name: 'praman_user', value: JSON.stringify(adminUser) },
+        ],
+      },
+      {
+        origin: 'http://localhost:5173',
+        localStorage: [
+          { name: 'praman_token', value: token },
+          { name: 'praman_user', value: JSON.stringify(adminUser) },
+        ],
+      },
+      {
         origin: 'http://127.0.0.1:5174',
         localStorage: [
           { name: 'praman_token', value: token },
@@ -92,7 +106,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:5174',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
     headless: true,
   },

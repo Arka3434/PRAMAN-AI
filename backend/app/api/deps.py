@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Callable
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,16 +19,16 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    token_query: str | None = Query(None, alias="token"),
     db: Session = Depends(get_db),
 ) -> User:
-    if not credentials or not credentials.credentials:
+    token = credentials.credentials if credentials and credentials.credentials else token_query
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required. Bearer token missing.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    token = credentials.credentials
     try:
         payload = decode_access_token(token)
     except jwt.ExpiredSignatureError:

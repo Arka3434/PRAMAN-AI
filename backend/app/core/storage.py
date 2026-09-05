@@ -6,7 +6,7 @@ from fastapi import HTTPException, UploadFile, status
 
 UPLOAD_ROOT = Path(__file__).resolve().parent.parent / 'storage' / 'uploads'
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/webp'}
 
 
 def ensure_upload_root() -> Path:
@@ -27,7 +27,7 @@ def save_upload_file(file: UploadFile, inspection_id: str) -> tuple[str, str]:
 
     if file.content_type == 'image/png' and file_bytes[:8] != b'\x89PNG\r\n\x1a\n':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Uploaded file is not a valid PNG image.')
-    if file.content_type == 'image/jpeg' and file_bytes[:2] != b'\xff\xd8':
+    if file.content_type in ('image/jpeg', 'image/jpg', 'image/pjpeg') and file_bytes[:2] != b'\xff\xd8':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Uploaded file is not a valid JPEG image.')
     if file.content_type == 'image/webp' and not file_bytes[:4] == b'RIFF':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Uploaded file is not a valid WEBP image.')

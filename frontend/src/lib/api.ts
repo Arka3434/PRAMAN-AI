@@ -53,16 +53,21 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null
-  return sessionStorage.getItem(TOKEN_STORAGE_KEY)
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY)
 }
 
 export function setStoredToken(token: string): void {
-  sessionStorage.setItem(TOKEN_STORAGE_KEY, token)
+  try {
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, token)
+    localStorage.setItem(TOKEN_STORAGE_KEY, token)
+  } catch {
+    // ignore storage errors
+  }
 }
 
 export function getStoredUser(): UserProfile | null {
   if (typeof window === 'undefined') return null
-  const raw = sessionStorage.getItem(USER_STORAGE_KEY)
+  const raw = sessionStorage.getItem(USER_STORAGE_KEY) || localStorage.getItem(USER_STORAGE_KEY)
   if (!raw) return null
   try {
     return JSON.parse(raw) as UserProfile
@@ -72,12 +77,24 @@ export function getStoredUser(): UserProfile | null {
 }
 
 export function setStoredUser(user: UserProfile): void {
-  sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+  try {
+    const raw = JSON.stringify(user)
+    sessionStorage.setItem(USER_STORAGE_KEY, raw)
+    localStorage.setItem(USER_STORAGE_KEY, raw)
+  } catch {
+    // ignore storage errors
+  }
 }
 
 export function clearAuthStorage(): void {
-  sessionStorage.removeItem(TOKEN_STORAGE_KEY)
-  sessionStorage.removeItem(USER_STORAGE_KEY)
+  try {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY)
+    sessionStorage.removeItem(USER_STORAGE_KEY)
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    localStorage.removeItem(USER_STORAGE_KEY)
+  } catch {
+    // ignore storage errors
+  }
 }
 
 /**
