@@ -1,0 +1,428 @@
+===============================
+=== PRAMAN_AI_Final_PRD_SIH2026.docx ===
+===============================
+
+PRAMAN AI — Product Requirements Document
+SIH 2026 • SIH26034 • Final Product Specification
+Purpose: define what PRAMAN AI is, who it serves, what the MVP must do, and how success will be demonstrated. This document is grounded in the submitted SIH concept: AI-assisted package/label inspection, OCR + AI extraction, rule-based validation, Computer Vision, explainable results, evidence-backed reporting, senior-friendly UX and an enforcement dashboard.
+1. Product Vision
+PRAMAN AI is an AI-assisted Legal Metrology inspection platform that converts product/package images into structured declarations, configurable compliance checks, visual findings, traceable evidence and reviewable inspection reports.
+2. Problem
+Manual inspection is time-consuming and inconsistent. Officers may need to inspect labels, verify mandatory declarations, assess readability and prepare records manually. PRAMAN aims to reduce repetitive effort while keeping the inspector in control.
+3. Goals
+Reduce manual label-reading effort.
+Extract declarations from package images using OCR/AI.
+Validate extracted information using a deterministic, configurable rule engine.
+Detect visual issues using Computer Vision where technically feasible.
+Show explainable, evidence-linked findings.
+Support human confirmation/rejection/manual review.
+Generate evidence-backed reports.
+Provide inspection history, analytics and an enforcement dashboard.
+Provide a simplified consumer-facing scan mode.
+4. Non-Goals
+Do not replace the authorized inspector.
+Do not make unsupported legal claims.
+Do not make an LLM the compliance decision engine.
+Do not require a complex microservice/MLOps platform for the MVP.
+5. Users
+Role
+Needs
+Inspector
+Fast scan, extracted declarations, findings, evidence, review, report.
+Senior/low-tech user
+Large readable UI, simple workflow, clear status.
+Administrator
+Rules, users, configuration, audit/history.
+Consumer
+Simple product scan and understandable information.
+6. Core Workflow
+Capture/Upload → Quality Check → OCR/Extraction → Rule Validation → Visual Analysis → Compliance Summary → Evidence Review → Human Decision → Report → History.
+7. Functional Requirements
+Inspection Intake
+Create inspection
+Capture/upload multiple package images
+Retake/rotate/crop
+Track inspection status
+OCR & Extraction
+Detect text regions
+Recognize text
+Return confidence
+Map text to structured fields
+Allow inspector correction
+Rule Engine
+Select rules by product category
+Validate required declarations
+Validate configured formats/conditions
+Return PASS/WARNING/POTENTIAL VIOLATION/MANUAL REVIEW
+Store rule version used
+Computer Vision
+Image-quality checks
+Blur/glare/readability heuristics
+Configured visual checks
+Return evidence region and confidence where available
+Explainability
+WHAT was detected
+WHY it was flagged
+WHERE it appears
+EVIDENCE source
+RULE applied
+Human Review
+Confirm finding
+Reject finding
+Send to manual review
+Add notes
+Finalize inspection
+Reporting
+Generate PDF report
+Include findings, evidence and rule references
+Include inspector decision and timestamp
+Dashboard
+Inspection KPIs
+Compliance trends
+Violation breakdown
+Recent inspections
+Attention-required items
+History
+Search/filter inspections
+Open prior evidence
+View status and findings
+8. Data Model
+Core entities: User, Inspection, Product, Image/Evidence, OCRResult, Declaration, Rule, ComplianceCheck, Finding/Violation, ReviewDecision, Report, AuditEvent.
+9. Security
+Role-based access.
+Authenticated APIs.
+Controlled evidence/report access.
+Audit important inspector/admin actions.
+Avoid exposing internal enforcement data in consumer mode.
+10. MVP Acceptance Criteria
+A user can create an inspection from camera/upload.
+The system can extract configured fields from a demo package.
+The rule engine produces deterministic check results.
+Findings link back to image evidence.
+An inspector can review and finalize findings.
+A report can be generated.
+Inspection history and dashboard update from stored records.
+The complete flow can be demonstrated reliably with a prepared demo dataset.
+11. SIH Demo Flow
+Dashboard → New Inspection → Capture/Upload → Quality Check → Extraction → Compliance → Click finding → Evidence zoom → Explain WHAT/WHY/WHERE/RULE → Human review → PDF report → History/dashboard.
+
+===============================
+=== PRAMAN_AI_Final_Technical_Architecture_and_Stack_SIH2026.docx ===
+===============================
+
+PRAMAN AI — Technical Architecture & Stack Specification
+SIH 2026 • Final implementation recommendation aligned to submitted concept
+This stack deliberately keeps the headline technologies aligned with the SIH concept: React, FastAPI, Python, OCR, OpenCV and PostgreSQL, with cloud deployment. Supporting libraries may be used without changing that core architecture.
+1. Architecture
+Browser → React frontend → FastAPI backend → Python AI/CV services + deterministic rule engine → PostgreSQL + object storage → report generation → dashboard/history.
+2. Final Stack
+Layer
+Technology
+Role
+Frontend
+React
+Web application UI
+Styling
+Tailwind CSS
+Visual implementation
+UI components
+shadcn/ui
+Reusable components
+Charts
+Recharts
+Compliance/inspection analytics
+Evidence UI
+React-Konva
+Image annotations/bounding boxes
+API data
+TanStack Query
+Caching/loading/error states
+Backend
+FastAPI
+REST APIs and orchestration
+Language
+Python
+AI/CV/rules/backend
+OCR
+PaddleOCR
+Text detection/recognition
+Text detection
+DBNet++
+Text-region detection where applicable
+Computer Vision
+OpenCV
+Image preprocessing and visual checks
+Compliance
+Python deterministic Rule Engine
+Configured validation decisions
+Database
+PostgreSQL
+Relational inspection records
+ORM
+SQLAlchemy 2
+Database access
+Migrations
+Alembic
+Schema migrations
+Validation
+Pydantic
+API schemas
+Reports
+ReportLab
+PDF generation
+Storage
+S3-compatible object storage
+Images/evidence/reports
+Auth
+JWT + RBAC
+Access control
+Testing
+Pytest + Playwright
+Backend and E2E testing
+Packaging
+Docker
+Reproducible environment
+Deployment
+Managed cloud containers
+Prototype deployment
+3. Core Pipeline
+Image → OpenCV quality/preprocessing → PaddleOCR/DBNet++ → structured declarations → deterministic rule engine → Computer Vision checks → findings + evidence → human review → report → PostgreSQL/history.
+4. Rule Engine Principle
+The LLM must not be the compliance authority. Rules should be explicit, versioned and auditable. Example outputs: PASS, WARNING, POTENTIAL_VIOLATION, MANUAL_REVIEW.
+5. AI/LLM Usage
+Good: OCR normalization, structured field cleanup, human-readable explanation grounded in stored evidence.
+Bad: asking an LLM to decide legal compliance directly from an image.
+If an LLM is used, isolate it behind a provider interface so the core system remains deterministic.
+6. Database Entities
+users, roles, inspections, products, inspection_images, ocr_results, declarations, rules, rule_versions, compliance_checks, findings, evidence, review_decisions, reports, audit_events.
+7. API Groups
+POST /auth/...
+POST /inspections
+GET /inspections
+GET /inspections/{id}
+POST /inspections/{id}/images
+POST /inspections/{id}/analyze
+GET /inspections/{id}/findings
+POST /findings/{id}/decision
+GET /rules
+POST /rules
+GET /reports/{id}
+GET /analytics/...
+8. Project Structure
+frontend/ (React, components, pages, API client, charts, evidence viewer) and backend/ (FastAPI routes, models, schemas, services, ocr, vision, rules, compliance, reports, auth, database, tests). Keep domain logic out of route handlers.
+9. Deployment
+Dockerize frontend/backend.
+Use managed PostgreSQL.
+Use object storage for images/reports.
+Use HTTPS.
+Start with a simple deployment; add asynchronous workers only if analysis time requires them.
+10. Optional Later, Not MVP
+Redis + Celery for long-running jobs.
+Advanced model serving.
+Dedicated vector database only if a real retrieval use case emerges.
+More sophisticated observability/MLOps as scale requires.
+11. Explicitly Avoid for SIH MVP
+Node.js backend
+MongoDB as primary database
+Kubernetes
+Kafka
+Elasticsearch
+Unnecessary microservices
+LangChain everywhere
+Multiple LLM providers
+Complex MLOps platform
+These technologies can be valid in other products, but they do not make PRAMAN automatically better. Adding them without a concrete requirement increases complexity and creates unnecessary examiner questions.
+12. Examiner-Friendly Architecture Answer
+“We kept the prototype aligned with our submitted architecture: React for the inspection interface, FastAPI and Python for APIs and AI/CV integration, PaddleOCR/DBNet++ for text extraction, OpenCV for image analysis, a deterministic rule engine for compliance checks, PostgreSQL for structured inspection records, and cloud infrastructure for deployment. Supporting frontend libraries improve the UI without changing the core architecture.”
+13. Engineering Priority
+Build the vertical slice first: upload → OCR → structured fields → rules → evidence → review → report. Only after that works reliably should advanced analytics, asynchronous processing or additional AI capabilities be added.
+
+===============================
+=== PRAMAN_AI_Final_UIUX_Design_Document_SIH2026.docx ===
+===============================
+
+PRAMAN AI — UI/UX Design Document
+SIH 2026 • NeuroBank-inspired visual direction, adapted for inspection
+Reference: NeuroBank – Online Banking Dashboard Design by Phenomenon Product for Phenomenon Studio on Dribbble. The reference is used for visual inspiration: clean dashboard hierarchy, cards, charts, filtering, document/activity patterns and dark navy/blue direction. PRAMAN does not copy banking terminology or proprietary assets.
+1. Design Personality
+Trustworthy
+Modern government technology
+Evidence-first
+Calm and data-rich
+Field-friendly
+Senior-friendly
+AI-assisted, not AI-magical
+2. Visual System
+Token
+Suggested direction
+Purpose
+App background
+#F6F8FC
+Main background
+Surface
+#FFFFFF
+Cards/panels
+Primary dark
+#0B1230
+Sidebar/header
+Primary navy
+#14215C
+Navigation
+Primary blue
+#263FE0
+Primary actions
+Text primary
+#1D2330
+Main text
+Text secondary
+#667085
+Metadata
+Border
+#E4E7EC
+Dividers
+Success
+#15803D
+Pass
+Warning
+#B7791F
+Review/warning
+Violation
+#C62828
+Potential violation
+Info/AI
+#2563EB
+AI state
+3. Application Shell
+Dark navy sidebar.
+Top bar with page title, global search, notifications, help and profile.
+Light content background with white cards.
+Persistent New Inspection CTA.
+Breadcrumb/context on inspection screens.
+4. Navigation
+Overview • New Inspection • Inspections • Products • Violations • Reports • Analytics • Rules • Users • Settings.
+5. Officer Dashboard
+Header with context + New Inspection.
+KPI cards: Total Inspections, Passed Checks, Potential Violations, Manual Review, Average Score.
+Compliance trend chart.
+Violation breakdown chart.
+Recent inspections list.
+Attention-required list.
+Recurring issue insight card.
+6. Inspection UX
+Stepper: Upload → Quality Check → Extract → Validate → Review → Report.
+Camera-first capture.
+Multiple package-side images.
+Quality feedback for blur/glare/incomplete images.
+Visible processing timeline.
+Extraction review with editable fields.
+Split-screen analysis: evidence image on left, compliance/findings on right.
+7. Evidence Viewer
+Zoom/pan/fullscreen.
+Annotated bounding boxes.
+Click finding to focus evidence region.
+Show source image and evidence crop.
+Controls to show/hide annotations.
+8. Compliance Summary
+Prominent score/status card with breakdown. Example: 92/100; configured checks passed; warnings; potential violations; manual review. Score must be explainable and deterministic.
+9. Finding Cards
+Field
+Example
+Severity
+HIGH
+Finding
+Declaration readability issue
+Detected value
+MRP ₹650
+Why flagged
+Configured readability threshold not met
+Where
+Back label • lower-right
+Confidence
+89%
+Rule
+LM-DEMO-002 • v1.0
+Evidence
+Highlighted crop
+Actions
+Confirm • Reject • Manual Review
+10. PRAMAN Assistant
+Use a contextual side panel for Explain this finding, Summarize inspection, Show why flagged and List manual-review items. The assistant must use inspection evidence/configured rules and must not override deterministic compliance results.
+11. Reports & History
+Report cards for inspection report/evidence pack/rule summary.
+Search/filter by date, status, category, inspector and severity.
+History table with Inspection ID, date, product, category, score, status, inspector and findings.
+12. Analytics
+Compliance trend
+Violations by type
+Violations by category
+Inspector activity
+Manual review rate
+Recurring products
+13. Consumer Mode
+Single primary Scan Product CTA.
+Large image and text.
+Simple information/status cards.
+No internal enforcement details.
+14. Responsive & Accessibility
+Desktop multi-column dashboard.
+Tablet collapsible navigation.
+Mobile camera-first workflow.
+44px+ comfortable targets.
+Strong contrast.
+Status communicated by text + icon, not color alone.
+Simple Mode with larger text and reduced density.
+Reduced-motion support.
+15. Screen Inventory
+Screen
+Priority
+Landing
+P1
+Login
+P0
+Officer Dashboard
+P0
+New Inspection
+P0
+Capture / Upload
+P0
+Quality Check
+P0
+Processing
+P0
+Extraction Review
+P0
+Compliance Analysis
+P0
+Evidence Viewer
+P0
+Final Review
+P0
+Report
+P0
+Inspection History
+P0
+Products
+P1
+Violations
+P1
+Analytics
+P1
+Rules
+P1
+Rule Editor
+P1
+Consumer Scan
+P1
+Settings
+P2
+16. Design Anti-Patterns
+Do not build a generic AI SaaS dashboard.
+Do not make the chatbot the product.
+Do not use huge decorative animations.
+Do not hide evidence behind multiple clicks.
+Do not use red/green without labels.
+Do not make unsupported compliance claims.
+Do not create decorative charts with no drill-down.
+17. Final Direction
+NeuroBank-inspired dashboard clarity + government-tech trust + computer-vision evidence workspace + field inspection UX. The defining visual experience is the inspection analysis/evidence screen, not the dashboard alone.
+

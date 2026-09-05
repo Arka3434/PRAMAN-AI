@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "catalog_version": "1.0.0",
+  "jurisdiction": "India",
+  "regulatory_framework": "Legal Metrology (Packaged Commodities) Rules, 2011 (as amended)",
+  "description": "Formal versioned rule catalog for pre-packaged commodities statutory declarations under Chapter II of PCR 2011.",
+  "last_updated": "2026-09-02",
+  "rules": [
+    {
+      "rule_id": "PCR-001",
+      "title": "Declaration of Name and Address of Manufacturer, Packer, or Importer",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(a) read with Explanations I, II, and III",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Packages of commodities containing quantity of more than 25 kg or 25 litre (except cement, fertilizer, and agricultural farm produce sold in bags above 50 kg) under Rule 3(a)-(b)",
+        "Packaged commodities meant for industrial or institutional consumers under Rule 3(c)",
+        "Packages containing food articles, where requirements of the Food Safety and Standards Act, 2006 (FSSA) and rules thereunder apply instead pursuant to Rule 6(1)(a) Explanation III"
+      ],
+      "input_fields": [
+        "manufacturer_name",
+        "manufacturer_address"
+      ],
+      "check_type": "presence",
+      "expected_condition": "Both name and complete address of the manufacturer (or manufacturer and packer, or importer for imported packages) must be declared conspicuously on the package or label.",
+      "severity": "critical",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and extracted text string containing entity name and physical street/locality/city/state address."
+    },
+    {
+      "rule_id": "PCR-002",
+      "title": "Declaration of Country of Origin for Imported Products",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(aa)",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2018-01-01",
+      "effective_to": null,
+      "applicability": "Imported pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Domestic (non-imported) pre-packaged products manufactured in India",
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "country_of_origin"
+      ],
+      "check_type": "conditional_presence",
+      "expected_condition": "For imported packages, the name of the country of origin or manufacture or assembly must be declared on the package or label.",
+      "severity": "critical",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and text matching 'Country of Origin', 'Made in', or a recognized sovereign country name when product/inspection is flagged as imported."
+    },
+    {
+      "rule_id": "PCR-003",
+      "title": "Declaration of Common or Generic Name of the Commodity",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(b)",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II, including combination packages containing more than one product.",
+      "exemptions": [
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "commodity_name"
+      ],
+      "check_type": "presence",
+      "expected_condition": "The common or generic name of the commodity must be declared on the package; in case of packages with more than one product, the name and quantity of each product must be declared.",
+      "severity": "major",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and text line identifying the generic or common commodity denomination on the package."
+    },
+    {
+      "rule_id": "PCR-004",
+      "title": "Declaration of Net Quantity in Standard Units of Weight, Measure, or Number",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(c) read with Rule 11, Rule 12, and Fourth Schedule",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)",
+        "Exceptions specified under Rule 12(2) and Fourth Schedule for specific commodity categories"
+      ],
+      "input_fields": [
+        "net_quantity",
+        "quantity_unit"
+      ],
+      "check_type": "presence_and_format",
+      "expected_condition": "Net quantity must be declared with a positive numeric quantity and an approved standard statutory metric unit (g, kg, ml, l, m, cm) or count (number, N, U, pieces).",
+      "severity": "critical",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and text string containing numeric quantity and recognized standard metric unit of weight, volume, length, or unit count."
+    },
+    {
+      "rule_id": "PCR-005",
+      "title": "Declaration of Month and Year of Manufacture",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(d) read with Provisos, G.S.R. 779(E), and G.S.R. 226(E)",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf, GSR226_1732871458.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Food articles governed under the Food Safety and Standards Act, 2006",
+        "Seeds labeled and certified under the Seeds Act, 1966",
+        "Cosmetics products governed under the Drugs and Cosmetics Rules, 1945",
+        "Packages containing bidi or incense sticks (agarbatti) under Rule 6(1) Proviso (A)(i)",
+        "Domestic LPG cylinders of 14.2 kg or 5 kg bottled and marketed by PSUs under Rule 6(1) Proviso (A)(ii)",
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "month_year"
+      ],
+      "check_type": "presence_and_format",
+      "expected_condition": "The month and year of manufacture must be declared on the package in words, numerals, or both (e.g., MM/YYYY, MM-YYYY, or MMM YYYY).",
+      "severity": "major",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and date text string parsing into a valid calendar month and 4-digit calendar year."
+    },
+    {
+      "rule_id": "PCR-006",
+      "title": "Declaration of Best Before or Use By Date for Perishable Commodities",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(da)",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2018-01-01",
+      "effective_to": null,
+      "applicability": "Packages containing a commodity which may become unfit for human consumption after a period of time.",
+      "exemptions": [
+        "Commodities where expiry or best-before provisions are made in any other law (such as food under FSSA or pharmaceuticals under D&C Rules)",
+        "Non-perishable, durable, or non-consumable pre-packaged goods",
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "best_before_date"
+      ],
+      "check_type": "conditional_format",
+      "expected_condition": "If the commodity is perishable and not exempt by other legislation, the 'best before' or 'use by' date, month, and year must be declared on the label.",
+      "severity": "major",
+      "executable_status": "NEEDS_VERIFICATION",
+      "evidence_requirement": "OCR bounding box and text containing 'Best Before' or 'Use By' followed by day/month/year or month/year string. Non-executable for automatic failure because commodity perishability and governing statute cannot be ascertained from label photograph alone."
+    },
+    {
+      "rule_id": "PCR-007",
+      "title": "Declaration of Maximum Retail Price (MRP) Inclusive of All Taxes",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 6(1)(e) read with Rule 2(m), Proviso (C), and G.S.R. 226(E)",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf, GSR226_1732871458.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Packages containing bidi under Rule 6(1) Proviso (C)(i)",
+        "Domestic LPG cylinders covered under the Administrative Price Mechanism of the Government under Rule 6(1) Proviso (C)(ii)",
+        "Alcoholic beverages or spirituous liquor where State Excise Laws govern retail sale price declaration",
+        "Essential commodities whose retail sale price is fixed and notified under the Essential Commodities Act, 1955",
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "retail_sale_price"
+      ],
+      "check_type": "presence_and_format",
+      "expected_condition": "The retail sale price must be declared in Indian currency with explicit indication that it is the Maximum Retail Price (MRP) inclusive of all taxes.",
+      "severity": "critical",
+      "executable_status": "SAFE",
+      "evidence_requirement": "OCR bounding box and text string containing numeric price value, currency symbol ('₹' / 'Rs.' / 'INR'), and tax inclusiveness phrase ('inclusive of all taxes' / 'incl. of all taxes')."
+    },
+    {
+      "rule_id": "PCR-008",
+      "title": "Principal Display Panel Grouping and Minimum Font Height Specifications",
+      "legal_citation": "Legal Metrology (Packaged Commodities) Rules, 2011, Chapter II, Rule 7 read with Rule 2(h) and Table-I",
+      "source_document": "PCR_2011_CONSOLIDATED.pdf",
+      "effective_from": "2011-04-01",
+      "effective_to": null,
+      "applicability": "All pre-packaged commodities intended for retail sale under Chapter II of the Legal Metrology (Packaged Commodities) Rules, 2011.",
+      "exemptions": [
+        "Rule 7(4): Sub-rules (1) to (3) do not apply if information is specified under any other law",
+        "Packages of capacity 10 cubic centimeters or less may use a card or firmly affixed tape under Rule 7(1)",
+        "Rule 3 general exemptions (packages containing quantity > 25 kg/L and industrial/institutional consumers)"
+      ],
+      "input_fields": [
+        "principal_display_panel_region",
+        "numeral_font_height_mm",
+        "letter_font_height_mm"
+      ],
+      "check_type": "visual_and_dimensional",
+      "expected_condition": "Mandatory declarations must be grouped together on the principal display panel, and numeral/letter heights must meet statutory minimums under Table-I based on the calculated area of the principal display panel.",
+      "severity": "warning",
+      "executable_status": "NEEDS_VERIFICATION",
+      "evidence_requirement": "Multi-region layout grouping bounding boxes and calibrated millimeter measurements from image pixels. Non-executable for automated pass/fail because uncalibrated 2D photographs lack absolute scale/DPI calibration and container surface geometry."
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Node & Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/test-results/
+test-results/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Databases & SQLite artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+Desktop.ini
+
+# Docker & Logs
+*.log
+
+# Alembic
+backend/alembic/versions/__pycache__/
+
+# IDE
+.vscode/
+.idea/
+
+# Storage / Uploads
+backend/app/storage/uploads/
+
+# Temporary / Scratch
+scratch/
