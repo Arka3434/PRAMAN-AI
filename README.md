@@ -10,7 +10,7 @@ The platform combines multi-panel package image capture, OCR, computer vision, d
 
 ---
 
-## 📊 PRAMAN AI — End-to-End Workflow
+## 📊 PRAMAN AI — End-to-End Workflow  
 
 The complete inspection process moves from package image capture to evidence-backed compliance findings, human review, reporting, and historical tracking.
 
