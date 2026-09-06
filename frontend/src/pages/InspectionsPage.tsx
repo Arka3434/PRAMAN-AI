@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -54,7 +55,10 @@ export function InspectionsPage() {
         params.append('search', searchTerm.trim())
       }
 
-      const res = await fetch(`${API_BASE}/api/v1/inspections?${params.toString()}`)
+      const token = getStoredToken()
+      const res = await fetch(`${API_BASE}/api/v1/inspections?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         throw new Error(`Failed to load inspections: HTTP ${res.status}`)
       }

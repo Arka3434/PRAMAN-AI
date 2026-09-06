@@ -396,9 +396,11 @@ function VisualEvidenceViewer({
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getStoredToken()
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   })
@@ -460,7 +462,10 @@ export function InspectionWorkflowPage() {
 
   const fetchNotice = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/inspections/${id}/notice`)
+      const token = getStoredToken()
+      const res = await fetch(`${API_BASE}/api/v1/inspections/${id}/notice`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (res.ok) {
         const data = (await res.json()) as StatutoryNotice
         setNotice(data)
@@ -485,9 +490,13 @@ export function InspectionWorkflowPage() {
       setNoticeActionLoading(true)
       setNoticeMessage('')
       setErrorMessage('')
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/notice/draft`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           recipient_role: recipientRole,
           recipient_name: recipientName || undefined,
@@ -516,9 +525,13 @@ export function InspectionWorkflowPage() {
       setNoticeActionLoading(true)
       setNoticeMessage('')
       setErrorMessage('')
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/notices/${notice.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           recipient_role: recipientRole,
           recipient_name: recipientName,
@@ -549,9 +562,13 @@ export function InspectionWorkflowPage() {
       setNoticeActionLoading(true)
       setNoticeMessage('')
       setErrorMessage('')
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/notices/${notice.id}/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           officer_notes: officerReviewNotes || 'Statutory findings and legal basis reviewed by authorized officer.',
           officer_review_notes: officerReviewNotes,
@@ -582,9 +599,13 @@ export function InspectionWorkflowPage() {
       setNoticeActionLoading(true)
       setNoticeMessage('')
       setErrorMessage('')
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/notices/${notice.id}/issue`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           officer_review_notes: officerReviewNotes || undefined,
         }),
@@ -784,8 +805,10 @@ export function InspectionWorkflowPage() {
     try {
       setUploading(true)
       setErrorMessage('')
+      const token = getStoredToken()
       const response = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/upload-images`, {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
 
@@ -1128,15 +1151,23 @@ export function InspectionWorkflowPage() {
 
               <div className="flex flex-wrap gap-3">
                 <Button
-                  onClick={() => void uploadImages()}
-                  disabled={uploading || !hasSelectedFiles || !canUpload}
-                  title={!canUpload ? 'Officer role has read-only access to evidence.' : undefined}
+                  onClick={() => {
+                    if (!hasSelectedFiles) {
+                      fileInputRef.current?.click()
+                      return
+                    }
+                    void uploadImages()
+                  }}
+                  disabled={uploading || !canUpload}
+                  title={!canUpload ? 'Officer role has read-only access to evidence.' : !hasSelectedFiles ? 'Click to select package images' : undefined}
                 >
                   {uploading
                     ? 'Uploading...'
                     : selectedFiles.length > 1
                       ? `Upload ${selectedFiles.length} images`
-                      : 'Upload image'}
+                      : hasSelectedFiles
+                        ? 'Upload image'
+                        : 'Select & Upload image'}
                 </Button>
               </div>
             </CardContent>

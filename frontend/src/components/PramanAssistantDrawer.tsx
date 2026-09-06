@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from './ui/button'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -159,15 +160,21 @@ export function PramanAssistantDrawer({
 
     const fetchData = async () => {
       try {
+        const token = getStoredToken()
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+
         if (activeTab === 'summary') {
-          const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/assistant/summarize`)
+          const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/assistant/summarize`, {
+            headers: authHeaders,
+          })
           if (!res.ok) throw new Error(`Failed to fetch summary: ${res.statusText}`)
           const data = await res.json()
           if (isMounted) setSummaryData(data)
         } else if (activeTab === 'explain') {
           if (!selectedFindingId) return
           const res = await fetch(
-            `${API_BASE}/api/v1/inspections/${inspectionId}/assistant/explain-finding?finding_id=${selectedFindingId}`
+            `${API_BASE}/api/v1/inspections/${inspectionId}/assistant/explain-finding?finding_id=${selectedFindingId}`,
+            { headers: authHeaders }
           )
           if (!res.ok) throw new Error(`Failed to explain finding: ${res.statusText}`)
           const data = await res.json()
@@ -175,13 +182,16 @@ export function PramanAssistantDrawer({
         } else if (activeTab === 'trace') {
           if (!selectedFindingId) return
           const res = await fetch(
-            `${API_BASE}/api/v1/inspections/${inspectionId}/assistant/evidence-trace?finding_id=${selectedFindingId}`
+            `${API_BASE}/api/v1/inspections/${inspectionId}/assistant/evidence-trace?finding_id=${selectedFindingId}`,
+            { headers: authHeaders }
           )
           if (!res.ok) throw new Error(`Failed to trace evidence: ${res.statusText}`)
           const data = await res.json()
           if (isMounted) setTraceData(data)
         } else if (activeTab === 'manual') {
-          const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/assistant/manual-review-guide`)
+          const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/assistant/manual-review-guide`, {
+            headers: authHeaders,
+          })
           if (!res.ok) throw new Error(`Failed to load manual review guide: ${res.statusText}`)
           const data = await res.json()
           if (isMounted) setManualData(data)

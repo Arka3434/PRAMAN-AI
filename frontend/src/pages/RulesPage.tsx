@@ -19,6 +19,7 @@ import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -79,7 +80,10 @@ export function RulesPage() {
         params.append('search', searchTerm.trim())
       }
 
-      const res = await fetch(`${API_BASE}/api/v1/rules?${params.toString()}`)
+      const token = getStoredToken()
+      const res = await fetch(`${API_BASE}/api/v1/rules?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         throw new Error(`Failed to load legal rule catalog: HTTP ${res.status}`)
       }

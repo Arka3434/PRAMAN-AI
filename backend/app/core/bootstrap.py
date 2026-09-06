@@ -70,4 +70,32 @@ def bootstrap_initial_admin(db: Session) -> User | None:
     db.commit()
     db.refresh(admin_user)
     logger.info("Successfully bootstrapped initial administrator: %s", email)
+    ensure_default_dev_users(db)
     return admin_user
+
+
+def ensure_default_dev_users(db: Session) -> None:
+    users_data = [
+        ("admin@praman.gov.in", "Admin Officer", UserRole.ADMIN.value, "Central HQ - New Delhi", "ADM-001"),
+        ("supervisor@praman.gov.in", "Supervising Officer Sharma", UserRole.SUPERVISING_OFFICER.value, "Regional Zone North", "SUP-101"),
+        ("inspector1@praman.gov.in", "Inspector Rajesh Kumar", UserRole.LEGAL_METROLOGY_INSPECTOR.value, "Delhi District Office", "INS-201"),
+        ("reviewer@praman.gov.in", "Review Officer Verma", UserRole.REVIEWER.value, "Central Legal Review Cell", "REV-301"),
+    ]
+    for email, name, role, office, badge in users_data:
+        user = db.scalars(select(User).where(User.email == email)).first()
+        if not user:
+            new_u = User(
+                email=email,
+                full_name=name,
+                role=role,
+                hashed_password=hash_password("ValidPass123!@#"),
+                designation=role.replace("_", " ").title(),
+                jurisdiction_office=office,
+                badge_number=badge,
+                is_active=True,
+            )
+            db.add(new_u)
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()

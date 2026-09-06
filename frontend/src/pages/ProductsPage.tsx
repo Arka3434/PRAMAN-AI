@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -110,7 +111,10 @@ export function ProductsPage() {
         params.append('search', searchTerm.trim())
       }
 
-      const res = await fetch(`${API_BASE}/api/v1/products?${params.toString()}`)
+      const token = getStoredToken()
+      const res = await fetch(`${API_BASE}/api/v1/products?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         throw new Error(`Failed to load products: HTTP ${res.status}`)
       }
@@ -137,7 +141,10 @@ export function ProductsPage() {
     setActionSuccess(null)
     setIsEditing(false)
     try {
-      const res = await fetch(`${API_BASE}/api/v1/products/${productId}`)
+      const token = getStoredToken()
+      const res = await fetch(`${API_BASE}/api/v1/products/${productId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         throw new Error('Failed to load product details')
       }
@@ -163,9 +170,13 @@ export function ProductsPage() {
     setActionError(null)
     setActionSuccess(null)
     try {
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/products/${selectedProductId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(editForm),
       })
       if (!res.ok) {
@@ -187,8 +198,10 @@ export function ProductsPage() {
     if (!window.confirm('Are you sure you want to delete this product?')) return
     setActionError(null)
     try {
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/products/${selectedProductId}`, {
         method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}))
@@ -207,9 +220,13 @@ export function ProductsPage() {
     setIsRegistering(true)
     setRegisterError(null)
     try {
+      const token = getStoredToken()
       const res = await fetch(`${API_BASE}/api/v1/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(newProductForm),
       })
       if (!res.ok) {

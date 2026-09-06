@@ -8,6 +8,7 @@ import { Input } from '../components/ui/input'
 import { PageHeader } from '../components/ui/page-header'
 import { Select } from '../components/ui/select'
 import type { ProductSummary } from './ProductsPage'
+import { getStoredToken } from '../lib/api'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -47,37 +48,25 @@ export function NewInspectionPage() {
   })
 
   useEffect(() => {
-    const fetchAvailableProducts = async () => {
-      setLoadingProducts(true)
+    async function loadCatalog() {
       try {
-        const res = await fetch(`${API_BASE}/api/v1/products`)
+        setLoadingProducts(true)
+        const token = getStoredToken()
+        const res = await fetch(`${API_BASE}/api/v1/products`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
         if (res.ok) {
-          const data = (await res.json()) as ProductSummary[]
+          const data = await res.json() as ProductSummary[]
           setAvailableProducts(data)
-          if (preSelectedProductId) {
-            const matched = data.find((p) => p.id === preSelectedProductId)
-            if (matched) {
-              setProductMode('existing')
-              setSelectedProductId(matched.id)
-              setForm((prev) => ({
-                ...prev,
-                productName: matched.name,
-                category: matched.category || 'Food & Beverages',
-                brand: matched.brand || '',
-                manufacturer: matched.manufacturer || '',
-              }))
-            }
-          }
         }
       } catch {
-        // Fallback gracefully
+        // non-blocking fallback
       } finally {
         setLoadingProducts(false)
       }
     }
-
-    void fetchAvailableProducts()
-  }, [preSelectedProductId])
+    void loadCatalog()
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -101,6 +90,26 @@ export function NewInspectionPage() {
     }
   }
 
+  const startCamera = async () => {
+    try {
+      setCameraError('')
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access is not supported by your browser')
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+      setCameraOpen(true)
+    } catch (err) {
+      setCameraError(err instanceof Error ? err.message : 'Could not access device camera')
+    }
+  }
+
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop())
@@ -110,39 +119,21 @@ export function NewInspectionPage() {
   }
 
   const openCamera = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('This browser does not support device camera access.')
+    if (cameraOpen) {
+      stopCamera()
       return
     }
-
-    try {
-      setCameraError('')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false,
-      })
-      streamRef.current = stream
-      setCameraOpen(true)
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-      }
-    } catch {
-      setCameraError('Unable to access the device camera. Use upload or manual barcode entry instead.')
-      setCameraOpen(false)
-    }
+    await startCamera()
   }
 
   const captureCameraFrame = () => {
-    if (!videoRef.current) {
+    const video = videoRef.current
+    if (!video) {
       return
     }
-
-    const video = videoRef.current
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth || 1200
-    canvas.height = video.videoHeight || 900
+    canvas.width = video.videoWidth || 1280
+    canvas.height = video.videoHeight || 720
     const context = canvas.getContext('2d')
     if (!context) {
       return
@@ -160,19 +151,45 @@ export function NewInspectionPage() {
     }, 'image/jpeg', 0.9)
   }
 
+  const handleUploadClick = () => {
+    const fileInput = document.createElement('input')
+    fileInput.type = 'file'
+    fileInput.accept = 'image/jpeg,image/png,image/webp'
+    fileInput.multiple = true
+    fileInput.style.display = 'none'
+    document.body.appendChild(fileInput)
+    fileInput.onchange = (e) => {
+      const target = e.target as HTMLInputElement
+      const files = Array.from(target.files ?? [])
+      if (files.length > 0) {
+        setSelectedFiles((current) => [...current, ...files])
+        setCapturedPreview(URL.createObjectURL(files[0]))
+      }
+      if (document.body.contains(fileInput)) {
+        document.body.removeChild(fileInput)
+      }
+    }
+    fileInput.click()
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSubmitting(true)
     setErrorMessage('')
 
     try {
+      const token = getStoredToken()
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {}
       let finalProductId = selectedProductId
 
       // If user chose to register a new product or no existing product was selected
       if (productMode === 'new' || !finalProductId) {
         const productResponse = await fetch(`${API_BASE}/api/v1/products`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader,
+          },
           body: JSON.stringify({
             name: form.productName || 'Unnamed product',
             category: form.category,
@@ -192,7 +209,10 @@ export function NewInspectionPage() {
 
       const inspectionResponse = await fetch(`${API_BASE}/api/v1/inspections`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader,
+        },
         body: JSON.stringify({
           inspection_number: `INSP-${Date.now().toString().slice(-6)}`,
           status: 'DRAFT',
@@ -218,6 +238,7 @@ export function NewInspectionPage() {
 
         const uploadResponse = await fetch(`${API_BASE}/api/v1/inspections/${inspection.id}/upload-images`, {
           method: 'POST',
+          headers: authHeader,
           body: formData,
         })
 
@@ -235,7 +256,7 @@ export function NewInspectionPage() {
     }
   }
 
-  const actionCardClass = 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg'
+  const actionCardClass = 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg text-left w-full cursor-pointer'
 
   return (
     <div>
@@ -264,7 +285,7 @@ export function NewInspectionPage() {
             </div>
           </button>
 
-          <button type="button" className={actionCardClass}>
+          <button type="button" className={actionCardClass} onClick={handleUploadClick}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-600">Library</div>
@@ -298,6 +319,43 @@ export function NewInspectionPage() {
             </div>
           </button>
         </div>
+
+        {capturedPreview ? (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">
+                  Selected Package Evidence ({selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''})
+                </CardTitle>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedFiles([])
+                    setCapturedPreview(null)
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <img src={capturedPreview} alt="Selected preview" className="h-24 w-24 rounded-xl object-cover border border-slate-200" />
+                <div className="text-sm text-slate-600 space-y-1">
+                  <div className="font-semibold text-slate-900">{selectedFiles[0]?.name}</div>
+                  <div className="text-xs text-slate-500">{(selectedFiles[0]?.size / 1024).toFixed(1)} KB</div>
+                  {selectedFiles.length > 1 && (
+                    <div className="text-xs text-indigo-600 font-medium">
+                      + {selectedFiles.length - 1} additional image(s) attached
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {cameraOpen ? (
           <Card>
