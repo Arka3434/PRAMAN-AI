@@ -161,7 +161,7 @@ export function PramanAssistantDrawer({
     const fetchData = async () => {
       try {
         const token = getStoredToken()
-        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+        const authHeaders: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
         if (activeTab === 'summary') {
           const res = await fetch(`${API_BASE}/api/v1/inspections/${inspectionId}/assistant/summarize`, {

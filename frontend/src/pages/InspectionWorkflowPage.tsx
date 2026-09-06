@@ -467,7 +467,11 @@ export function InspectionWorkflowPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (res.ok) {
-        const data = (await res.json()) as StatutoryNotice
+        const data = (await res.json()) as StatutoryNotice | null
+        if (!data) {
+          setNotice(null)
+          return
+        }
         setNotice(data)
         setRecipientRole(data.recipient_role || 'MANUFACTURER')
         setRecipientName(data.recipient_name || '')

@@ -21,6 +21,8 @@ def bootstrap_initial_admin(db: Session) -> User | None:
         select(User).where(User.role == UserRole.ADMIN.value)
     ).first()
 
+    ensure_default_dev_users(db)
+
     if existing_admin:
         logger.info("Admin user already exists (%s). Skipping initial bootstrap.", existing_admin.email)
         return existing_admin
@@ -70,7 +72,6 @@ def bootstrap_initial_admin(db: Session) -> User | None:
     db.commit()
     db.refresh(admin_user)
     logger.info("Successfully bootstrapped initial administrator: %s", email)
-    ensure_default_dev_users(db)
     return admin_user
 
 
@@ -95,6 +96,15 @@ def ensure_default_dev_users(db: Session) -> None:
                 is_active=True,
             )
             db.add(new_u)
+            try:
+                db.commit()
+            except Exception:
+                db.rollback()
+        else:
+            user.hashed_password = hash_password("ValidPass123!@#")
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            user.is_active = True
             try:
                 db.commit()
             except Exception:

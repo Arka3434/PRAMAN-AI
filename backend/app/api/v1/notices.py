@@ -72,34 +72,31 @@ def create_notice_draft_alias(
 
 @router.get(
     '/inspections/{inspection_id}/notice',
-    response_model=NoticeRead,
+    response_model=NoticeRead | None,
     summary='Retrieve statutory notice associated with an inspection',
 )
 def get_inspection_notice(
     inspection_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.NOTICE_READ)),
-) -> NoticeRead:
+) -> NoticeRead | None:
     check_inspection_ownership(inspection_id, current_user, db, require_write=False)
     notice = notice_drafting_service.get_notice_for_inspection(db, inspection_id)
     if not notice:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'No statutory notice exists for inspection {inspection_id}',
-        )
+        return None
     return NoticeRead.model_validate(notice)
 
 
 @router.get(
     '/inspections/{inspection_id}/notices',
-    response_model=NoticeRead,
+    response_model=NoticeRead | None,
     include_in_schema=False,
 )
 def get_inspection_notice_alias(
     inspection_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.NOTICE_READ)),
-) -> NoticeRead:
+) -> NoticeRead | None:
     return get_inspection_notice(inspection_id, db, current_user)
 
 

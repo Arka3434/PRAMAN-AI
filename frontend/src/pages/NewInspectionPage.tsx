@@ -179,7 +179,7 @@ export function NewInspectionPage() {
 
     try {
       const token = getStoredToken()
-      const authHeader = token ? { Authorization: `Bearer ${token}` } : {}
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
       let finalProductId = selectedProductId
 
       // If user chose to register a new product or no existing product was selected
